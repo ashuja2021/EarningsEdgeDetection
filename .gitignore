@@ -4,12 +4,19 @@ logs/
  
 #CSV Tables 
 *.csv   
-
+*.xlsx 
+*.xls 
 #Dolt Database
 cli_scanner/earnings/
 cli_scanner/options/
 earnings/
 options/
+
+# Google Drive Sync
+_gsdata_/
+*.gs
+*.gsl
+
 # Python
 __pycache__/
 *.py[cod]
