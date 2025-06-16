@@ -12,6 +12,7 @@ A sophisticated scanner for identifying high-probability earnings trades based o
 * Performance optimized scanning process
 * Comprehensive metrics tracking
 * Iron fly strategy recommendations with break-even analysis
+* Cross-platform support (Windows and Unix-based systems)
 
 ## Trade Categories
 
@@ -36,7 +37,7 @@ The scanner organizes results into three categories:
  
 1. Clone the repository:
 ```bash
-git clone https://github.com/Jayesh-Chhabra/EarningsEdgeDetection.git
+git clone https://github.com/ashuja2021/EarningsEdgeDetection.git
 cd EarningsEdgeDetection/cli_scanner
 ```
  
@@ -62,7 +63,7 @@ pip install yahooquery webdriver-manager
  
 ## Usage
 
-Prerequisite:
+### Unix-based Systems (Linux/MacOS)
 
 Make sure (within the cli_scanner folder) you run ```chmod +x ./run.sh``` before proceeding so that you don't run into a permissions issue
 
@@ -71,7 +72,16 @@ Basic usage:
 ./run.sh [MM/DD/YYYY]
 ```
 
-The run.sh script automatically detects the optimal number of worker threads for your system.
+### Windows Systems
+
+The project includes a PowerShell script (`run.ps1`) for Windows users. No special permissions are required.
+
+Basic usage:
+```powershell
+.\run.ps1 [MM/DD/YYYY]
+```
+
+The script automatically detects the optimal number of worker threads for your system.
 
 To run manually with custom settings:
 ```bash
@@ -199,6 +209,7 @@ python scanner.py -u --date "04/20/2025"
    dolt clone dolthub/earnings
    cd earnings
    ```
+   Database cloned on Promethus Desktop (6/5/2025)
 
 4. **Start the MySQL Server**:
    ```bash
