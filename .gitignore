@@ -2,6 +2,14 @@
 logs/
 *.log
  
+#CSV Tables 
+*.csv   
+
+#Dolt Database
+cli_scanner/earnings/
+cli_scanner/options/
+earnings/
+options/
 # Python
 __pycache__/
 *.py[cod]

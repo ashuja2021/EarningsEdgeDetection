@@ -1,0 +1,11 @@
+venv/
+venv/*
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.env
+.venv 
+cli_scanner/earnings/
+cli_scanner/options/
