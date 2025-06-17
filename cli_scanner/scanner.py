@@ -10,11 +10,14 @@ import sys
 import time
 from datetime import datetime, timezone
 
-from utils.logging_utils import setup_logging
+from utils.logging_utils import setup_logging, load_env
 from core.scanner import EarningsScanner
 from utils.discord_webhook import send_webhook
 
 def main():
+    # Load environment variables first
+    load_env()
+    
     parser = argparse.ArgumentParser(
         description="""
         Scans for recommended options plays based on upcoming earnings.

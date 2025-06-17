@@ -6,6 +6,12 @@ import logging
 import sys
 from datetime import datetime
 from pathlib import Path
+from dotenv import load_dotenv
+
+def load_env():
+    """Load environment variables from .env file"""
+    env_path = Path(__file__).parent.parent / '.env'
+    load_dotenv(env_path)
 
 def setup_logging(log_dir: str = "logs") -> None:
     """

@@ -19,8 +19,8 @@ def patch_yfdata_cookie_basic():
     """
     original = _data.YfData._get_cookie_basic
 
-    def _patched(self, timeout=30):
-        cookie = original(self, timeout)
+    def _patched(self, *args, **kwargs):
+        cookie = original(self, *args, **kwargs)
         return _wrap_cookie(cookie, self._session)
 
     _data.YfData._get_cookie_basic = _patched
