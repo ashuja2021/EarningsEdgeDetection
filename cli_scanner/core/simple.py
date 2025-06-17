@@ -8,6 +8,7 @@ import numpy as np
 import os
 import pandas as pd
 import requests
+from datetime import datetime, timedelta
 
 DEFAULT_DATE = dt.date.today() - dt.timedelta(396)
 TODAY = dt.date.today()
@@ -219,6 +220,99 @@ def create_earnings_calendar_csv(key, tickers_df, output_file='earnings_calendar
     results.to_csv(output_path, index=False)
     print(f"\nFinal results saved to {output_path}")
     return results
+
+def get_upcoming_earnings(key, days=9):
+    """
+    Get list of companies reporting earnings in the next N trading days.
+    
+    Args:
+        key (str): EOD API key
+        days (int): Number of trading days to look ahead (default 9)
+        
+    Returns:
+        list: List of dictionaries containing ticker and earnings date
+    """
+    # Calculate date range
+    end_date = TODAY + timedelta(days=days*2)  # Double the days to account for weekends
+    
+    # Format dates for API
+    from_date = TODAY.strftime('%Y-%m-%d')
+    to_date = end_date.strftime('%Y-%m-%d')
+    
+    # Construct API URL
+    url = f'https://eodhd.com/api/calendar/earnings?from={from_date}&to={to_date}&api_token={key}&fmt=json'
+    
+    try:
+        # Get earnings calendar
+        response = requests.get(url)
+        response.raise_for_status()
+        
+        # Parse JSON response
+        data = response.json()
+        
+        # The earnings data is nested under the 'earnings' key
+        if isinstance(data, dict) and 'earnings' in data:
+            earnings_data = data['earnings']
+            total_entries = len(earnings_data) if isinstance(earnings_data, list) else 0
+            
+            # Filter for US stocks and upcoming dates
+            upcoming = []
+            us_stocks = 0
+            non_us_stocks = 0
+            out_of_range = 0
+            
+            for entry in earnings_data:
+                try:
+                    if isinstance(entry, dict):
+                        if entry.get('code', '').endswith('US'):
+                            us_stocks += 1
+                            ticker = entry['code'][:-3]
+                            # Use report_date instead of date for filtering
+                            report_date = datetime.strptime(entry['report_date'], '%Y-%m-%d').date()
+                            
+                            # Only include if within our date range
+                            if TODAY <= report_date <= end_date:
+                                # Map before_after_market to our timing format
+                                timing = entry.get('before_after_market', 'Unknown')
+                                if timing == 'BeforeMarket':
+                                    timing = 'Pre Market'
+                                elif timing == 'AfterMarket':
+                                    timing = 'Post Market'
+                                elif timing is None:
+                                    timing = 'Unknown'
+                                else:
+                                    timing = 'During Market'
+                                
+                                upcoming.append({
+                                    'ticker': ticker,
+                                    'date': report_date,
+                                    'timing': timing
+                                })
+                            else:
+                                out_of_range += 1
+                        else:
+                            non_us_stocks += 1
+                except Exception as e:
+                    continue
+            
+            # Sort by date
+            upcoming.sort(key=lambda x: x['date'])
+            
+            print(f"EOD API: {len(upcoming)} US stocks found in date range")
+            return upcoming
+        else:
+            print("EOD API: No earnings data found")
+            return []
+        
+    except requests.exceptions.RequestException as e:
+        print(f"EOD API: Request error")
+        return []
+    except ValueError as e:
+        print(f"EOD API: Response parsing error")
+        return []
+    except Exception as e:
+        print(f"EOD API: Unexpected error")
+        return []
 
 def main():
     # Read API key and clean it

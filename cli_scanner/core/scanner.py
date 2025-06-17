@@ -447,11 +447,59 @@ class EarningsScanner:
         # Initialize the analyzer
         self.analyzer = OptionsAnalyzer()
     
+    def _get_eod_earnings_data(self, date: datetime.date) -> List[Dict]:
+        """
+        Get earnings data from EOD API.
+        
+        Args:
+            date: The date to fetch earnings for
+            
+        Returns:
+            List of dictionaries with ticker and timing information
+        """
+        import os
+        from core.simple import get_upcoming_earnings
+        
+        api_key = os.environ.get('EODHD_API_KEY')
+        if not api_key:
+            logger.warning("EODHD_API_KEY environment variable not set. Cannot use EOD API.")
+            return []
+            
+        try:
+            # Get upcoming earnings
+            upcoming = get_upcoming_earnings(api_key)
+            
+            # Filter for our target date
+            stocks = []
+            for entry in upcoming:
+                if entry['date'] == date:
+                    timing = entry['timing']
+                    if timing == 'bmo':
+                        timing = 'Pre Market'
+                    elif timing == 'amc':
+                        timing = 'Post Market'
+                    elif timing in ['dmh', '']:
+                        timing = 'During Market'
+                    else:
+                        timing = 'Unknown'
+                        
+                    stocks.append({
+                        'ticker': entry['ticker'],
+                        'timing': timing
+                    })
+            
+            logger.info(f"Found {len(stocks)} earnings reports from EOD API")
+            return stocks
+            
+        except Exception as e:
+            logger.warning(f"Error fetching data from EOD API: {e}")
+            return []
+    
     def _get_combined_earnings_data(self, date: datetime.date) -> List[Dict]:
         """
         Get earnings data from all available sources and combine results.
         
-        This method fetches data from DoltHub, Finnhub, and Investing.com,
+        This method fetches data from DoltHub, Finnhub, Investing.com, and EOD API,
         then merges the results to get a comprehensive list of unique stocks.
         
         Args:
@@ -466,9 +514,10 @@ class EarningsScanner:
         dolthub_stocks = self._get_dolthub_earnings_data(date)
         finnhub_stocks = self._get_finnhub_earnings_data(date)
         investing_stocks = self._get_investing_earnings_data(date)
+        eod_stocks = self._get_eod_earnings_data(date)
         
-        logger.info(f"Found {len(dolthub_stocks)} from DoltHub, {len(finnhub_stocks)} from Finnhub, "  
-                   f"and {len(investing_stocks)} from Investing.com")
+        logger.info(f"Found {len(dolthub_stocks)} from DoltHub, {len(finnhub_stocks)} from Finnhub, "
+                   f"{len(investing_stocks)} from Investing.com, and {len(eod_stocks)} from EOD API")
         
         # Create a dictionary to merge the results, using the ticker as the key
         all_stocks = {}
@@ -488,6 +537,15 @@ class EarningsScanner:
             elif all_stocks[ticker].get('timing') == 'Unknown' and stock.get('timing') != 'Unknown':
                 all_stocks[ticker]['timing'] = stock.get('timing')
         
+        # Then EOD API stocks
+        for stock in eod_stocks:
+            ticker = stock['ticker']
+            if ticker not in all_stocks:
+                all_stocks[ticker] = stock
+            # Only override timing if current is Unknown and new one isn't
+            elif all_stocks[ticker].get('timing') == 'Unknown' and stock.get('timing') != 'Unknown':
+                all_stocks[ticker]['timing'] = stock.get('timing')
+        
         # Finally Investing.com stocks
         for stock in investing_stocks:
             ticker = stock['ticker']
@@ -500,7 +558,7 @@ class EarningsScanner:
         # Convert back to a list
         merged_stocks = list(all_stocks.values())
         
-        logger.info(f"Combined {len(dolthub_stocks)} + {len(finnhub_stocks)} + {len(investing_stocks)} = {len(merged_stocks)} unique stocks")
+        logger.info(f"Combined {len(dolthub_stocks)} + {len(finnhub_stocks)} + {len(investing_stocks)} + {len(eod_stocks)} = {len(merged_stocks)} unique stocks")
         
         return merged_stocks
     
