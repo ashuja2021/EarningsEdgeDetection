@@ -151,9 +151,10 @@ def main():
 
         if args.iron_fly:
             print("\nIRON FLY STRATEGY:")
+            print(f'    Calculating iron fly for {ticker}...')
             iron_fly = scanner.calculate_iron_fly_strikes(ticker)
             if 'error' in iron_fly:
-                print(f'  {iron_fly["error"]}')
+                print(f'    Error calculating iron fly: {iron_fly["error"]}')
             else:
                 print(f'  Expiration: {iron_fly["expiration"]}')
                 print(f'  SHORT: ${iron_fly["short_put_strike"]}P/'
@@ -186,6 +187,19 @@ def main():
                 tier2 = [t for t in recommended
                          if stock_metrics[t].get('tier') == 2]
 
+                # Add debug output for all candidates
+                print('\nVALIDATION RESULTS:')
+                for tick in recommended + [t for t, _ in near_misses]:
+                    m = stock_metrics[tick]
+                    print(f'\n  {tick}:')
+                    print(f'    Pass: {m.get("pass", False)}')
+                    print(f'    Tier: {m.get("tier", 0)}')
+                    print(f'    Reason: {m.get("reason", "N/A")}')
+                    print(f'    Price: ${m["price"]:.2f}')
+                    print(f'    Volume: {m["volume"]:,.0f}')
+                    print(f'    IV/RV Ratio: {m["iv_rv_ratio"]:.2f}')
+                    print(f'    Term Structure: {m["term_structure"]:.3f}')
+
                 if args.list:
                     print('\nTIER 1:', ', '.join(tier1) or 'None')
                     print('TIER 2:', ', '.join(tier2) or 'None')
@@ -204,8 +218,11 @@ def main():
                             print(f'    IV/RV Ratio: {m["iv_rv_ratio"]:.2f}')
                             print(f'    Term Structure: {m["term_structure"]:.3f}')
                             if args.iron_fly:
+                                print(f'    Calculating iron fly for {tick}...')
                                 fly = scanner.calculate_iron_fly_strikes(tick)
-                                if 'error' not in fly:
+                                if 'error' in fly:
+                                    print(f'    Error calculating iron fly: {fly["error"]}')
+                                else:
                                     print('    --------------------')
                                     print('    IRON FLY STRATEGY:')
                                     print(f'      Expiration: '
@@ -240,8 +257,11 @@ def main():
                             print(f'    IV/RV Ratio: {m["iv_rv_ratio"]:.2f}')
                             print(f'    Term Structure: {m["term_structure"]:.3f}')
                             if args.iron_fly:
+                                print(f'    Calculating iron fly for {tick}...')
                                 fly = scanner.calculate_iron_fly_strikes(tick)
-                                if 'error' not in fly:
+                                if 'error' in fly:
+                                    print(f'    Error calculating iron fly: {fly["error"]}')
+                                else:
                                     print('    --------------------')
                                     print('    IRON FLY STRATEGY:')
                                     print(f'      Expiration: '
@@ -299,8 +319,11 @@ def main():
                             ]
                             # iron fly
                             if args.iron_fly:
+                                print(f'    Calculating iron fly for {tick}...')
                                 fly = scanner.calculate_iron_fly_strikes(tick)
-                                if 'error' not in fly:
+                                if 'error' in fly:
+                                    print(f'    Error calculating iron fly: {fly["error"]}')
+                                else:
                                     value_lines.extend([
                                         "",
                                         "**Iron Fly**:",
@@ -326,8 +349,11 @@ def main():
                                 f"• Tier: `{m.get('tier')}`"
                             ]
                             if args.iron_fly:
+                                print(f'    Calculating iron fly for {tick}...')
                                 fly = scanner.calculate_iron_fly_strikes(tick)
-                                if 'error' not in fly:
+                                if 'error' in fly:
+                                    print(f'    Error calculating iron fly: {fly["error"]}')
+                                else:
                                     value_lines.extend([
                                         "",
                                         "**Iron Fly**:",

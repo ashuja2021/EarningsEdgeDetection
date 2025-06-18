@@ -848,13 +848,16 @@ class EarningsScanner:
         metrics = {}
         
         try:
+            logger.info(f"\nValidating {ticker}:")
             yf_ticker = yf.Ticker(ticker, session=session)
             
             # Price check (first and fastest)
             current_price = yf_ticker.history(period='1d')['Close'].iloc[-1]
                 
             metrics['price'] = current_price
+            logger.info(f"  Price: ${current_price:.2f}")
             if current_price < 10.0:
+                logger.info(f"  FAILED: Price ${current_price:.2f} < $10.00")
                 return {
                     'pass': False,
                     'near_miss': False,
@@ -865,6 +868,7 @@ class EarningsScanner:
             # Options availability and expiration check
             options_dates = yf_ticker.options
             if not options_dates:
+                logger.info("  FAILED: No options available")
                 return {
                     'pass': False,
                     'near_miss': False,
@@ -875,7 +879,9 @@ class EarningsScanner:
             # Check expiration date
             first_expiry = datetime.strptime(options_dates[0], "%Y-%m-%d").date()
             days_to_expiry = (first_expiry - datetime.now().date()).days
+            logger.info(f"  Days to expiry: {days_to_expiry}")
             if days_to_expiry > 9:
+                logger.info(f"  FAILED: Next expiration too far: {days_to_expiry} days")
                 return {
                     'pass': False,
                     'near_miss': False,
@@ -886,7 +892,9 @@ class EarningsScanner:
             # Check open interest
             chain = yf_ticker.option_chain(options_dates[0])
             total_oi = chain.calls['openInterest'].sum() + chain.puts['openInterest'].sum()
+            logger.info(f"  Open interest: {total_oi}")
             if total_oi < 2000:
+                logger.info(f"  FAILED: Insufficient open interest: {total_oi}")
                 return {
                     'pass': False,
                     'near_miss': False,
